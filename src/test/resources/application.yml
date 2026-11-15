@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    username: sa
+    password: ""
+  security:
+    user:
+      name: test-shop-owner
+      password: test-only-password

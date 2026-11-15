@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${customer.name + ' - AgroShop'}">Customer - AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <div th:if="${successMessage}" class="alert alert-success" role="status" th:text="${successMessage}"></div>
+    <a class="link-success" th:href="@{/customers}">Back to customers</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 my-3">
+        <div>
+            <h1 class="h2 mb-1" th:text="${customer.name}">Farmer name</h1>
+            <p class="text-secondary mb-0" th:text="${customer.village}">Village</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-success" th:href="@{/customers/{id}/edit(id=${customer.id})}">Edit details</a>
+            <a class="btn btn-success" th:href="@{/customers/{id}/payments/new(id=${customer.id})}">
+                Record payment
+            </a>
+            <form th:if="${customer.active}" method="post"
+                  th:action="@{/customers/{id}/deactivate(id=${customer.id})}"
+                  onsubmit="return confirm('Deactivate this customer? The customer record will be retained.');">
+                <button class="btn btn-outline-danger" type="submit">Deactivate</button>
+            </form>
+        </div>
+    </div>
+
+    <section class="card mb-4">
+        <div class="card-header bg-white"><h2 class="h5 mb-0">Customer profile</h2></div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4 col-lg-3">Mobile number</dt>
+                <dd class="col-sm-8 col-lg-9" th:text="${customer.phone}">Mobile number</dd>
+                <dt class="col-sm-4 col-lg-3">Village</dt>
+                <dd class="col-sm-8 col-lg-9" th:text="${customer.village}">Village</dd>
+                <dt class="col-sm-4 col-lg-3">Address</dt>
+                <dd class="col-sm-8 col-lg-9" th:text="${customer.address ?: '-'}">Address</dd>
+                <dt class="col-sm-4 col-lg-3">Notes</dt>
+                <dd class="col-sm-8 col-lg-9" th:text="${customer.notes ?: '-'}">Notes</dd>
+                <dt class="col-sm-4 col-lg-3">Registration date</dt>
+                <dd class="col-sm-8 col-lg-9"
+                    th:text="${customer.createdAt == null ? '-' : #temporals.format(customer.createdAt, 'yyyy-MM-dd HH:mm')}">
+                    Registration date
+                </dd>
+                <dt class="col-sm-4 col-lg-3">Status</dt>
+                <dd class="col-sm-8 col-lg-9">
+                    <span th:if="${customer.active}" class="badge text-bg-success">Active</span>
+                    <span th:unless="${customer.active}" class="badge text-bg-secondary">Inactive</span>
+                </dd>
+            </dl>
+        </div>
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-header bg-white"><h2 class="h5 mb-0">Financial summary</h2></div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-8">Total purchases</dt>
+                <dd class="col-sm-4 text-sm-end"
+                    th:text="|₹${#numbers.formatDecimal(financialSummary.totalPurchases, 1, 'COMMA', 2, 'POINT')}|">
+                    ₹0.00
+                </dd>
+                <dt class="col-sm-8">Total payments received</dt>
+                <dd class="col-sm-4 text-sm-end"
+                    th:text="|₹${#numbers.formatDecimal(financialSummary.totalPaymentsReceived, 1, 'COMMA', 2, 'POINT')}|">
+                    ₹0.00
+                </dd>
+                <dt class="col-sm-8">Outstanding balance</dt>
+                <dd class="col-sm-4 text-sm-end fw-semibold"
+                    th:text="|₹${#numbers.formatDecimal(financialSummary.outstandingBalance, 1, 'COMMA', 2, 'POINT')}|">
+                    ₹0.00
+                </dd>
+            </dl>
+        </div>
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-header bg-white"><h2 class="h5 mb-0">Payment history</h2></div>
+        <div th:if="${#lists.isEmpty(paymentHistory)}" class="card-body">
+            <p class="text-secondary mb-0">No payments have been recorded for this customer.</p>
+        </div>
+        <div th:unless="${#lists.isEmpty(paymentHistory)}" class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Payment date</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Transaction reference</th>
+                    <th scope="col">Allocated invoices</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="payment : ${paymentHistory}">
+                    <td>
+                        <a class="link-success"
+                           th:href="@{/payments/{id}(id=${payment.id})}"
+                           th:text="${#temporals.format(payment.paymentDate, 'yyyy-MM-dd HH:mm')}">Date</a>
+                    </td>
+                    <td th:text="|₹${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')}|">₹0.00</td>
+                    <td th:text="${payment.paymentMethod}">CASH</td>
+                    <td th:text="${payment.transactionReference ?: '-'}">Reference</td>
+                    <td>
+                        <span th:if="${#lists.isEmpty(payment.allocations)}">-</span>
+                        <span th:each="allocation, item : ${payment.allocations}">
+                            <span th:if="${item.index > 0}">, </span>
+                            <a class="link-success" th:href="@{/sales/{id}(id=${allocation.saleId})}"
+                               th:text="${allocation.invoiceNumber}">Invoice</a>
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header bg-white"><h2 class="h5 mb-0">Purchase history</h2></div>
+        <div th:if="${#lists.isEmpty(purchaseHistory)}" class="card-body">
+            <p class="text-secondary mb-0">This customer has no purchases yet.</p>
+        </div>
+        <div th:unless="${#lists.isEmpty(purchaseHistory)}" class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Invoice</th>
+                    <th scope="col">Sale date</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Paid</th>
+                    <th scope="col">Balance</th>
+                    <th scope="col">Payment status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="purchase : ${purchaseHistory}">
+                    <td>
+                        <a class="link-success fw-semibold"
+                           th:href="@{/sales/{id}(id=${purchase.saleId})}"
+                           th:text="${purchase.invoiceNumber}">Invoice</a>
+                    </td>
+                    <td th:text="${#temporals.format(purchase.saleDate, 'yyyy-MM-dd HH:mm')}">Date</td>
+                    <td th:text="|₹${#numbers.formatDecimal(purchase.invoiceTotal, 1, 'COMMA', 2, 'POINT')}|">
+                        ₹0.00
+                    </td>
+                    <td th:text="|₹${#numbers.formatDecimal(purchase.amountPaid, 1, 'COMMA', 2, 'POINT')}|">
+                        ₹0.00
+                    </td>
+                    <td th:text="|₹${#numbers.formatDecimal(purchase.outstandingAmount, 1, 'COMMA', 2, 'POINT')}|">
+                        ₹0.00
+                    </td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${purchase.paymentStatusLabel == 'PAID'} ? 'text-bg-success' : (${purchase.paymentStatusLabel == 'CANCELLED'} ? 'text-bg-secondary' : (${purchase.paymentStatusLabel == 'UNPAID'} ? 'text-bg-danger' : 'text-bg-warning'))"
+                              th:text="${purchase.paymentStatusLabel}">UNPAID</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

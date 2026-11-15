@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sales | AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <div th:if="${successMessage}" class="alert alert-success" role="status" th:text="${successMessage}"></div>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Sales</h1>
+            <p class="text-secondary mb-0">Create invoices and review completed sales.</p>
+        </div>
+        <a class="btn btn-success" th:href="@{/sales/new}">New sale</a>
+    </div>
+
+    <div class="table-responsive bg-white border rounded">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+            <tr>
+                <th scope="col">Invoice</th>
+                <th scope="col">Date</th>
+                <th scope="col">Customer</th>
+                <th scope="col">Total</th>
+                <th scope="col">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="sale : ${sales}">
+                <td><a class="link-success fw-semibold" th:href="@{/sales/{id}(id=${sale.id})}"
+                       th:text="${sale.invoiceNumber}">Invoice number</a></td>
+                <td th:text="${#temporals.format(sale.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
+                <td th:text="${sale.customerName}">Customer</td>
+                <td th:text="${#numbers.formatDecimal(sale.totalAmount, 1, 2)}">0.00</td>
+                <td><span class="badge text-bg-success" th:text="${sale.status}">COMPLETED</span></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(sales)}">
+                <td colspan="5" class="text-center text-secondary py-4">No sales recorded yet.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

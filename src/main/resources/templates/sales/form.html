@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>New sale | AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <div class="mb-4">
+        <a class="link-success" th:href="@{/sales}">Back to sales</a>
+        <h1 class="h2 mt-2">Create sale</h1>
+        <p class="text-secondary mb-0">Prices and stock are revalidated when the sale is saved.</p>
+    </div>
+
+    <form class="card shadow-sm" method="post" th:action="@{/sales}" th:object="${saleRequest}"
+          th:attr="data-item-count=${#lists.size(saleRequest.items)}">
+        <input type="hidden" th:field="*{requestKey}">
+        <div class="card-body">
+            <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert">
+                <ul class="mb-0">
+                    <li th:each="error : ${#fields.allErrors()}" th:text="${error}">There was a problem.</li>
+                </ul>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label" for="customerId">Customer <span class="text-danger">*</span></label>
+                    <select id="customerId" class="form-select" th:field="*{customerId}" required>
+                        <option value="">Select a customer</option>
+                        <option th:each="customer : ${customers}" th:value="${customer.id}"
+                                th:text="|${customer.name} — ${customer.village} (${customer.phone})|">
+                            Customer
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="productSearch">Search products</label>
+                    <input id="productSearch" class="form-control" type="search"
+                           placeholder="Filter active products by name">
+                </div>
+            </div>
+
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered align-middle bg-white">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Product</th>
+                        <th>Available price</th>
+                        <th style="width: 10rem">Quantity</th>
+                        <th>Line total</th>
+                        <th><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                    </thead>
+                    <tbody id="saleItems">
+                    <tr th:each="line, stat : ${saleRequest.items}" class="sale-item-row">
+                        <td>
+                            <select class="form-select product-select" required
+                                    th:name="|items[${stat.index}].productId|">
+                                <option value="">Select an active product</option>
+                                <option th:each="product : ${products}" th:value="${product.id}"
+                                        th:data-name="${product.name}" th:data-price="${product.sellingPrice}"
+                                        th:data-unit="${product.unit}"
+                                        th:selected="${line.productId != null and line.productId == product.id}"
+                                        th:text="|${product.name} (${product.unit})|">
+                                    Product
+                                </option>
+                            </select>
+                        </td>
+                        <td><span class="unit-price">—</span></td>
+                        <td>
+                            <input class="form-control quantity-input" type="number" min="0.001" step="0.001"
+                                   required th:name="|items[${stat.index}].quantity|" th:value="${line.quantity}">
+                        </td>
+                        <td><span class="line-total">0.00</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger remove-item" type="button">Remove</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${#lists.isEmpty(products)}" class="alert alert-warning" role="status">
+                No active products are available. Add or activate a product before creating a sale.
+            </div>
+            <button id="addSaleItem" class="btn btn-outline-success mb-4" type="button"
+                    th:disabled="${#lists.isEmpty(products)}">Add product</button>
+
+            <template id="saleItemTemplate">
+                <tr class="sale-item-row">
+                    <td>
+                        <select class="form-select product-select" name="items[__index__].productId" required>
+                            <option value="">Select an active product</option>
+                            <option th:each="product : ${products}" th:value="${product.id}"
+                                    th:data-name="${product.name}" th:data-price="${product.sellingPrice}"
+                                    th:data-unit="${product.unit}" th:text="|${product.name} (${product.unit})|">
+                                Product
+                            </option>
+                        </select>
+                    </td>
+                    <td><span class="unit-price">—</span></td>
+                    <td>
+                        <input class="form-control quantity-input" type="number" min="0.001" step="0.001"
+                               name="items[__index__].quantity" required>
+                    </td>
+                    <td><span class="line-total">0.00</span></td>
+                    <td><button class="btn btn-sm btn-outline-danger remove-item" type="button">Remove</button></td>
+                </tr>
+            </template>
+
+            <div class="row g-3 justify-content-end">
+                <div class="col-md-5 col-lg-4">
+                    <label class="form-label" for="amountPaid">Initial amount received</label>
+                    <input id="amountPaid" class="form-control" type="number" min="0" step="0.01"
+                           th:field="*{amountPaid}" required>
+                    <div class="invalid-feedback d-block" th:errors="*{amountPaid}"></div>
+                </div>
+                <div class="col-md-5 col-lg-4">
+                    <label class="form-label" for="paymentMethod">Payment method</label>
+                    <select id="paymentMethod" class="form-select" th:field="*{paymentMethod}">
+                        <option value="">Select if payment received</option>
+                        <option value="CASH">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <dl class="row text-end mb-0">
+                        <dt class="col">Invoice total</dt>
+                        <dd class="col-auto"><span id="grandTotal">0.00</span></dd>
+                        <dt class="col">Remaining balance</dt>
+                        <dd class="col-auto fw-semibold"><span id="remainingBalance">0.00</span></dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex gap-2">
+            <button class="btn btn-success" type="submit">Confirm sale</button>
+            <a class="btn btn-outline-secondary" th:href="@{/sales}">Cancel</a>
+        </div>
+    </form>
+</main>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sales-form.js}"></script>
+</body>
+</html>

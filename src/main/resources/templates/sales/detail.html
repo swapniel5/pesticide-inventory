@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|${sale.invoiceNumber} - AgroShop|">Invoice - AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <div th:if="${successMessage}" class="alert alert-success" role="status" th:text="${successMessage}"></div>
+    <div class="d-flex justify-content-between align-items-center gap-2">
+        <a class="link-success" th:href="@{/sales}">Back to sales</a>
+        <a class="btn btn-outline-success" th:href="@{/sales/{id}/receipt(id=${sale.id})}">View receipt</a>
+    </div>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 my-3">
+        <div>
+            <h1 class="h2 mb-1" th:text="${sale.invoiceNumber}">Invoice</h1>
+            <p class="text-secondary mb-0" th:text="${#temporals.format(sale.createdAt, 'yyyy-MM-dd HH:mm')}">Date</p>
+        </div>
+        <span class="badge fs-6"
+              th:classappend="${sale.paymentStatusLabel == 'PAID'} ? 'text-bg-success' : (${sale.paymentStatusLabel == 'CANCELLED'} ? 'text-bg-secondary' : (${sale.paymentStatusLabel == 'UNPAID'} ? 'text-bg-danger' : 'text-bg-warning'))"
+              th:text="${sale.paymentStatusLabel}">UNPAID</span>
+    </div>
+
+    <section class="card mb-4">
+        <div class="card-header bg-white"><h2 class="h5 mb-0">Customer</h2></div>
+        <div class="card-body">
+            <div class="fw-semibold" th:text="${sale.customerName}">Customer name</div>
+            <div class="text-secondary" th:text="${sale.customerPhone}">Customer phone</div>
+        </div>
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-header bg-white"><h2 class="h5 mb-0">Invoice items</h2></div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Line total</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${sale.items}">
+                    <td th:text="|${item.productName} (${item.unit})|">Product</td>
+                    <td th:text="${item.quantity}">0</td>
+                    <td th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2)}">0.00</td>
+                    <td th:text="${#numbers.formatDecimal(item.lineTotal, 1, 2)}">0.00</td>
+                </tr>
+                </tbody>
+                <tfoot class="table-light">
+                <tr>
+                    <th colspan="3" class="text-end">Invoice total</th>
+                    <th th:text="${#numbers.formatDecimal(sale.totalAmount, 1, 2)}">0.00</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <section class="card ms-auto" style="max-width: 32rem">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col">Total paid to date</dt>
+                <dd class="col-auto" th:text="${#numbers.formatDecimal(sale.amountPaid, 1, 2)}">0.00</dd>
+                <dt class="col">Outstanding balance</dt>
+                <dd class="col-auto fw-semibold" th:text="${#numbers.formatDecimal(sale.outstandingBalance, 1, 2)}">
+                    0.00
+                </dd>
+            </dl>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

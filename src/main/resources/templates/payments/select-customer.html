@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Choose customer | AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <a class="link-success" th:href="@{/}">Back to dashboard</a>
+    <div class="mt-3 mb-4">
+        <h1 class="h2 mb-1">Record a payment</h1>
+        <p class="text-secondary mb-0">Choose the customer whose outstanding invoices this payment will cover.</p>
+    </div>
+    <section class="card shadow-sm">
+        <div th:if="${#lists.isEmpty(customers)}" class="card-body">
+            <p class="text-secondary">There are no active customers yet.</p>
+            <a class="btn btn-success" th:href="@{/customers/new}">Add customer</a>
+        </div>
+        <form th:unless="${#lists.isEmpty(customers)}" method="get" th:action="@{/payments/new}">
+            <div class="card-body">
+                <label for="customerId" class="form-label">Customer</label>
+                <select id="customerId" name="customerId" class="form-select" required>
+                    <option value="">Choose a customer</option>
+                    <option th:each="customer : ${customers}" th:value="${customer.id}"
+                            th:text="|${customer.name} — ${customer.village} (${customer.phone})|">Customer</option>
+                </select>
+            </div>
+            <div class="card-footer bg-white text-end">
+                <button class="btn btn-success" type="submit">Continue to payment</button>
+            </div>
+        </form>
+    </section>
+</main>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

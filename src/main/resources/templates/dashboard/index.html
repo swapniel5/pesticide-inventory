@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard | AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Shop dashboard</h1>
+            <p class="text-secondary mb-0">A quick look at sales, credit, payments, and stock.</p>
+        </div>
+        <a class="btn btn-success" th:href="@{/sales/new}">New sale</a>
+    </header>
+
+    <section class="mb-4" aria-labelledby="quick-actions-heading">
+        <h2 id="quick-actions-heading" class="h5 mb-3">Quick actions</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-success" th:href="@{/sales/new}">New sale</a>
+            <a class="btn btn-outline-success" th:href="@{/products/new}">Add product</a>
+            <a class="btn btn-outline-success" th:href="@{/customers/new}">Add customer</a>
+            <a class="btn btn-outline-success" th:href="@{/payments/new}">Record payment</a>
+            <a class="btn btn-outline-success" th:href="@{/inventory}">View inventory</a>
+        </div>
+    </section>
+
+    <section class="row g-3 mb-4" aria-label="Business summary">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <article class="card h-100 border-0 border-start border-success border-4 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h6 text-secondary">Total sales</h2>
+                    <p class="h3 fw-bold text-success mb-1"
+                       th:text="|₹${#numbers.formatDecimal(dashboard.totalSales, 1, 'COMMA', 2, 'POINT')}|">₹0.00</p>
+                    <p class="small text-secondary mb-0">Completed invoices; this is revenue, not profit.</p>
+                </div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <article class="card h-100 border-0 border-start border-warning border-4 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h6 text-secondary">Outstanding credit</h2>
+                    <p class="h3 fw-bold text-warning-emphasis mb-1"
+                       th:text="|₹${#numbers.formatDecimal(dashboard.outstandingCredit, 1, 'COMMA', 2, 'POINT')}|">
+                        ₹0.00
+                    </p>
+                    <p class="small text-secondary mb-0">Balance still due on completed invoices.</p>
+                </div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <article class="card h-100 border-0 border-start border-primary border-4 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h6 text-secondary">Payments received</h2>
+                    <p class="h3 fw-bold text-primary mb-1"
+                       th:text="|₹${#numbers.formatDecimal(dashboard.paymentsReceived, 1, 'COMMA', 2, 'POINT')}|">
+                        ₹0.00
+                    </p>
+                    <p class="small text-secondary mb-0">Valid payments allocated to completed sales.</p>
+                </div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <article class="card h-100 border-0 border-start border-danger border-4 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h6 text-secondary">Low stock products</h2>
+                    <p class="h3 fw-bold text-danger mb-1" th:text="${dashboard.lowStockProductCount}">0</p>
+                    <p class="small text-secondary mb-0">Active products at or below their alert threshold.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="card shadow-sm mb-4" aria-labelledby="recent-sales-heading">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h2 id="recent-sales-heading" class="h5 mb-0">Recent sales</h2>
+            <a class="link-success" th:href="@{/sales}">All sales</a>
+        </div>
+        <div th:if="${#lists.isEmpty(dashboard.recentSales)}" class="card-body text-secondary">
+            No completed sales yet. Use <strong>New sale</strong> to create the first invoice.
+        </div>
+        <div th:unless="${#lists.isEmpty(dashboard.recentSales)}" class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Invoice</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col" class="text-end">Total</th>
+                    <th scope="col" class="text-end">Paid</th>
+                    <th scope="col" class="text-end">Balance</th>
+                    <th scope="col">Payment status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="sale : ${dashboard.recentSales}">
+                    <td><a class="link-success fw-semibold" th:href="@{/sales/{id}(id=${sale.saleId})}"
+                           th:text="${sale.invoiceNumber}">Invoice</a></td>
+                    <td th:text="${#temporals.format(sale.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+                    <td th:text="${sale.customerName}">Customer</td>
+                    <td class="text-end"
+                        th:text="|₹${#numbers.formatDecimal(sale.totalAmount, 1, 'COMMA', 2, 'POINT')}|">₹0.00</td>
+                    <td class="text-end"
+                        th:text="|₹${#numbers.formatDecimal(sale.amountPaid, 1, 'COMMA', 2, 'POINT')}|">₹0.00</td>
+                    <td class="text-end"
+                        th:text="|₹${#numbers.formatDecimal(sale.outstandingBalance(), 1, 'COMMA', 2, 'POINT')}|">
+                        ₹0.00
+                    </td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${sale.paymentStatusLabel == 'PAID'} ? 'text-bg-success' : (${sale.paymentStatusLabel == 'UNPAID'} ? 'text-bg-danger' : 'text-bg-warning')"
+                              th:text="${sale.paymentStatusLabel}">UNPAID</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-6">
+            <section class="card h-100 shadow-sm" aria-labelledby="outstanding-customers-heading">
+                <div class="card-header bg-white">
+                    <h2 id="outstanding-customers-heading" class="h5 mb-0">Customers with outstanding credit</h2>
+                </div>
+                <div th:if="${#lists.isEmpty(dashboard.outstandingCustomers)}" class="card-body text-secondary">
+                    No customers have an outstanding balance.
+                </div>
+                <div th:unless="${#lists.isEmpty(dashboard.outstandingCustomers)}" class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Mobile</th>
+                            <th scope="col">Village</th>
+                            <th scope="col" class="text-end">Balance</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="customer : ${dashboard.outstandingCustomers}">
+                            <td>
+                                <a class="link-success" th:href="@{/customers/{id}(id=${customer.customerId})}"
+                                   th:text="${customer.customerName}">Customer</a>
+                                <span th:unless="${customer.active}" class="badge text-bg-secondary">Inactive</span>
+                            </td>
+                            <td th:text="${customer.phone}">Mobile</td>
+                            <td th:text="${customer.village}">Village</td>
+                            <td class="text-end fw-semibold"
+                                th:text="|₹${#numbers.formatDecimal(customer.outstandingBalance, 1, 'COMMA', 2, 'POINT')}|">
+                                ₹0.00
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <section class="card h-100 shadow-sm" aria-labelledby="low-stock-heading">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 id="low-stock-heading" class="h5 mb-0">Low stock alerts</h2>
+                    <a class="link-success" th:href="@{/inventory}">Inventory</a>
+                </div>
+                <div th:if="${#lists.isEmpty(dashboard.lowStockProducts)}" class="card-body text-secondary">
+                    All active products are above their stock alert thresholds.
+                </div>
+                <div th:unless="${#lists.isEmpty(dashboard.lowStockProducts)}" class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th scope="col">Product</th>
+                            <th scope="col" class="text-end">Available</th>
+                            <th scope="col" class="text-end">Threshold</th>
+                            <th scope="col">Unit</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="product : ${dashboard.lowStockProducts}">
+                            <td><a class="link-success" th:href="@{/products/{id}(id=${product.id})}"
+                                   th:text="${product.name}">Product</a></td>
+                            <td class="text-end" th:text="${product.quantity}">0</td>
+                            <td class="text-end" th:text="${product.lowStockThreshold}">0</td>
+                            <td th:text="${product.unit}">Unit</td>
+                            <td><span class="badge text-bg-warning">Low stock</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <section class="card shadow-sm" aria-labelledby="recent-payments-heading">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h2 id="recent-payments-heading" class="h5 mb-0">Recent payments</h2>
+            <a class="link-success" th:href="@{/payments}">All payments</a>
+        </div>
+        <div th:if="${#lists.isEmpty(dashboard.recentPayments)}" class="card-body text-secondary">
+            No payments recorded yet.
+        </div>
+        <div th:unless="${#lists.isEmpty(dashboard.recentPayments)}" class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Payment reference</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Date</th>
+                    <th scope="col" class="text-end">Amount</th>
+                    <th scope="col">Method</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="payment : ${dashboard.recentPayments}">
+                    <td><a class="link-success" th:href="@{/payments/{id}(id=${payment.paymentId})}"
+                           th:text="${payment.reference()}">PAY-1</a></td>
+                    <td><a class="link-success" th:href="@{/customers/{id}(id=${payment.customerId})}"
+                           th:text="${payment.customerName}">Customer</a></td>
+                    <td th:text="${#temporals.format(payment.paymentDate, 'dd MMM yyyy, HH:mm')}">Date</td>
+                    <td class="text-end"
+                        th:text="|₹${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')}|">₹0.00</td>
+                    <td th:text="${payment.paymentMethod}">CASH</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

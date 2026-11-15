@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Receipt ${receipt.invoiceNumber} - ${receipt.shopName}|">Receipt - AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+    <style>
+        .receipt { max-width: 900px; }
+        @media print {
+            @page { margin: 12mm; }
+            body { background: #fff !important; color: #000 !important; font-size: 10pt; }
+            .no-print { display: none !important; }
+            .receipt { max-width: none; border: 0 !important; box-shadow: none !important; }
+            .receipt-section, .receipt-table tr, .receipt-summary { break-inside: avoid; }
+            .table-responsive { overflow: visible !important; }
+            a { color: #000 !important; text-decoration: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <div class="no-print d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <a class="btn btn-outline-secondary" th:href="@{/sales/{id}(id=${receipt.saleId})}">
+            Back to invoice
+        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline-success" onclick="window.print()">Print receipt</button>
+            <a th:if="${receipt.whatsappUrl != null}" class="btn btn-success"
+               th:href="${receipt.whatsappUrl}" target="_blank" rel="noopener noreferrer">
+                Share on WhatsApp
+            </a>
+            <span th:unless="${receipt.whatsappUrl != null}" class="text-secondary align-self-center">
+                WhatsApp sharing is unavailable for this phone number or disabled for demo customers.
+            </span>
+        </div>
+    </div>
+
+    <article class="receipt bg-white border rounded shadow-sm mx-auto p-3 p-md-5">
+        <header class="receipt-section text-center border-bottom pb-3 mb-4">
+            <h1 class="h2 fw-bold mb-1" th:text="${receipt.shopName}">AgroShop</h1>
+            <p th:if="${!#strings.isEmpty(receipt.shopAddress)}" class="mb-1" th:text="${receipt.shopAddress}">
+                Shop address
+            </p>
+            <p th:if="${!#strings.isEmpty(receipt.shopPhone)}" class="mb-0">
+                Mobile: <span th:text="${receipt.shopPhone}">Shop mobile</span>
+            </p>
+            <h2 class="h5 text-uppercase mt-3 mb-0">Invoice receipt</h2>
+        </header>
+
+        <div th:if="${receipt.saleStatus.name() == 'CANCELLED'}"
+             class="alert alert-danger receipt-section" role="status">
+            This invoice is cancelled. No outstanding balance is due.
+        </div>
+
+        <section class="receipt-section row g-3 mb-4">
+            <div class="col-sm-6">
+                <h3 class="h6 text-uppercase text-secondary">Invoice information</h3>
+                <dl class="row mb-0">
+                    <dt class="col-5">Invoice</dt>
+                    <dd class="col-7 fw-semibold" th:text="${receipt.invoiceNumber}">INV-0001</dd>
+                    <dt class="col-5">Date</dt>
+                    <dd class="col-7"
+                        th:text="${#temporals.format(receipt.saleDate, 'dd MMM yyyy, hh:mm a')}">Date</dd>
+                    <dt class="col-5">Sale status</dt>
+                    <dd class="col-7" th:text="${receipt.saleStatus}">COMPLETED</dd>
+                </dl>
+            </div>
+            <div class="col-sm-6">
+                <h3 class="h6 text-uppercase text-secondary">Customer</h3>
+                <div class="fw-semibold" th:text="${receipt.customerName}">Customer name</div>
+                <div th:text="${receipt.customerPhone}">Customer mobile</div>
+                <div th:text="${receipt.customerVillage}">Village</div>
+            </div>
+        </section>
+
+        <section class="receipt-section mb-4">
+            <h3 class="h6 text-uppercase text-secondary">Items</h3>
+            <div class="table-responsive">
+                <table class="receipt-table table table-sm align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th scope="col">Product</th>
+                        <th scope="col" class="text-end">Quantity</th>
+                        <th scope="col" class="text-end">Unit price</th>
+                        <th scope="col" class="text-end">Line total</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${receipt.items}">
+                        <td th:text="${item.productName}">Product name</td>
+                        <td class="text-end"
+                            th:text="${#numbers.formatDecimal(item.quantity, 1, 'COMMA', 3, 'POINT')}">0.000</td>
+                        <td class="text-end"
+                            th:text="|₹${#numbers.formatDecimal(item.unitPrice, 1, 'COMMA', 2, 'POINT')}|">₹0.00</td>
+                        <td class="text-end"
+                            th:text="|₹${#numbers.formatDecimal(item.lineTotal, 1, 'COMMA', 2, 'POINT')}|">₹0.00</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="receipt-section receipt-summary ms-auto" style="max-width: 25rem">
+            <h3 class="h6 text-uppercase text-secondary">Payment summary</h3>
+            <dl class="row mb-2">
+                <dt class="col">Invoice amount</dt>
+                <dd class="col-auto"
+                    th:text="|₹${#numbers.formatDecimal(receipt.invoiceTotal, 1, 'COMMA', 2, 'POINT')}|">₹0.00</dd>
+                <dt class="col">Total paid so far</dt>
+                <dd class="col-auto"
+                    th:text="|₹${#numbers.formatDecimal(receipt.totalPaid, 1, 'COMMA', 2, 'POINT')}|">₹0.00</dd>
+                <dt class="col fw-semibold">Outstanding balance</dt>
+                <dd class="col-auto fw-semibold"
+                    th:text="|₹${#numbers.formatDecimal(receipt.outstandingBalance, 1, 'COMMA', 2, 'POINT')}|">
+                    ₹0.00
+                </dd>
+            </dl>
+            <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                <span class="fw-semibold">Payment status</span>
+                <span class="badge"
+                      th:classappend="${receipt.paymentStatus == 'PAID'} ? 'text-bg-success' : (${receipt.paymentStatus == 'CANCELLED'} ? 'text-bg-secondary' : (${receipt.paymentStatus == 'UNPAID'} ? 'text-bg-danger' : 'text-bg-warning'))"
+                      th:text="${receipt.paymentStatus}">UNPAID</span>
+            </div>
+        </section>
+        <footer class="receipt-section border-top mt-4 pt-3 text-center text-secondary small">
+            Thank you for your business.
+        </footer>
+    </article>
+</main>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

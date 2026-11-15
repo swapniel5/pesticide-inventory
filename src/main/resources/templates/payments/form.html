@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Record payment - AgroShop</title>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/shell :: navigation}"></div>
+<main class="container py-4">
+    <a class="link-success" th:href="@{/payments}">Back to payments</a>
+    <h1 class="h2 my-3">Record payment</h1>
+
+    <form method="post" th:action="@{/payments}" th:object="${paymentForm}">
+        <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+            <p class="mb-1" th:each="error : ${#fields.globalErrors()}" th:text="${error}">Payment error</p>
+        </div>
+        <div th:if="${customerError}" class="alert alert-danger" role="alert" th:text="${customerError}"></div>
+        <input type="hidden" th:field="*{requestKey}">
+        <div class="card mb-4">
+            <div class="card-header bg-white"><h2 class="h5 mb-0">Payment details</h2></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="customerId" class="form-label">Customer</label>
+                        <select id="customerId" th:field="*{customerId}" class="form-select"
+                                onchange="if(this.value){window.location.href='/customers/'+this.value+'/payments/new'}">
+                            <option value="">Select a customer</option>
+                            <option th:each="customer : ${customers}" th:value="${customer.id}"
+                                    th:text="|${customer.name} — ${customer.village}|">Customer</option>
+                        </select>
+                        <div class="text-danger small" th:errors="*{customerId}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="amount" class="form-label">Payment amount (₹)</label>
+                        <input id="amount" th:field="*{amount}" type="number" min="0.01" step="0.01"
+                               class="form-control" required>
+                        <div class="text-danger small" th:errors="*{amount}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="paymentDate" class="form-label">Payment date and time</label>
+                        <input id="paymentDate" th:field="*{paymentDate}" type="datetime-local"
+                               class="form-control" required>
+                        <div class="text-danger small" th:errors="*{paymentDate}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="paymentMethod" class="form-label">Payment method</label>
+                        <select id="paymentMethod" th:field="*{paymentMethod}" class="form-select" required>
+                            <option value="">Select a method</option>
+                            <option th:each="method : ${paymentMethods}" th:value="${method}"
+                                    th:text="${method}">CASH</option>
+                        </select>
+                        <div class="text-danger small" th:errors="*{paymentMethod}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="transactionReference" class="form-label">Transaction reference (optional)</label>
+                        <input id="transactionReference" th:field="*{transactionReference}" maxlength="120"
+                               class="form-control">
+                        <div class="text-danger small" th:errors="*{transactionReference}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="notes" class="form-label">Notes (optional)</label>
+                        <input id="notes" th:field="*{notes}" maxlength="500" class="form-control">
+                        <div class="text-danger small" th:errors="*{notes}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="card mb-4">
+            <div class="card-header bg-white">
+                <h2 class="h5 mb-0">Outstanding invoices</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(outstandingInvoices)}" class="card-body">
+                <p class="text-secondary mb-0">This customer has no outstanding completed invoices.</p>
+            </div>
+            <div th:unless="${#lists.isEmpty(outstandingInvoices)}">
+                <div class="card-body border-bottom">
+                    <div class="form-check">
+                        <input id="autoAllocate" th:field="*{autoAllocate}" type="checkbox" class="form-check-input">
+                        <label for="autoAllocate" class="form-check-label">
+                            Automatically allocate to the oldest invoices first
+                        </label>
+                    </div>
+                    <p class="small text-secondary mt-2 mb-0">
+                        Review each allocation below. Allocations must add up to the payment amount.
+                    </p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th scope="col">Invoice</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Original amount</th>
+                            <th scope="col">Already paid</th>
+                            <th scope="col">Outstanding</th>
+                            <th scope="col">Allocate (₹)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="invoice, row : ${outstandingInvoices}">
+                            <td th:text="${invoice.invoiceNumber}">INV-0001</td>
+                            <td th:text="${#temporals.format(invoice.saleDate, 'yyyy-MM-dd')}">Date</td>
+                            <td th:text="|₹${#numbers.formatDecimal(invoice.invoiceTotal, 1, 'COMMA', 2, 'POINT')}|">
+                                ₹0.00
+                            </td>
+                            <td th:text="|₹${#numbers.formatDecimal(invoice.amountPaid, 1, 'COMMA', 2, 'POINT')}|">
+                                ₹0.00
+                            </td>
+                            <td th:text="|₹${#numbers.formatDecimal(invoice.outstandingAmount, 1, 'COMMA', 2, 'POINT')}|">
+                                ₹0.00
+                            </td>
+                            <td>
+                                <input type="hidden"
+                                       th:field="*{allocations[__${row.index}__].saleId}">
+                                <input type="number" min="0" step="0.01" class="form-control allocation-input"
+                                       th:field="*{allocations[__${row.index}__].amount}"
+                                       th:attr="data-outstanding=${invoice.outstandingAmount}"
+                                       aria-label="Allocation amount">
+                                <div class="text-danger small"
+                                     th:errors="*{allocations[__${row.index}__].amount}"></div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-body border-top">
+                    <div class="d-flex justify-content-between">
+                        <span>Total allocated</span><strong id="allocatedTotal">₹0.00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Unallocated payment</span><strong id="unallocatedAmount">₹0.00</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="d-flex gap-2">
+            <button class="btn btn-success" type="submit"
+                    th:disabled="${#lists.isEmpty(outstandingInvoices)}">Review and record payment</button>
+            <a class="btn btn-outline-secondary" th:href="@{/payments}">Cancel</a>
+        </div>
+    </form>
+</main>
+<script>
+    (() => {
+        const amountInput = document.getElementById("amount");
+        const autoAllocate = document.getElementById("autoAllocate");
+        const allocationInputs = [...document.querySelectorAll(".allocation-input")];
+        const totalElement = document.getElementById("allocatedTotal");
+        const remainderElement = document.getElementById("unallocatedAmount");
+
+        if (!amountInput || allocationInputs.length === 0) {
+            return;
+        }
+
+        const cents = (value) => {
+            const parts = (value || "0").split(".");
+            return Number(parts[0]) * 100 + Number((parts[1] || "").padEnd(2, "0").slice(0, 2));
+        };
+        const currency = (value) => `₹${(value / 100).toLocaleString("en-IN", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
+        const update = () => {
+            let remaining = cents(amountInput.value);
+            if (autoAllocate.checked) {
+                for (const input of allocationInputs) {
+                    const allocated = Math.min(remaining, cents(input.dataset.outstanding));
+                    input.value = (allocated / 100).toFixed(2);
+                    remaining -= allocated;
+                }
+            }
+            let allocatedTotal = 0;
+            for (const input of allocationInputs) {
+                input.readOnly = autoAllocate.checked;
+                allocatedTotal += cents(input.value);
+            }
+            totalElement.textContent = currency(allocatedTotal);
+            remainderElement.textContent = currency(cents(amountInput.value) - allocatedTotal);
+            remainderElement.classList.toggle("text-danger", allocatedTotal !== cents(amountInput.value));
+        };
+
+        amountInput.addEventListener("input", update);
+        autoAllocate.addEventListener("change", update);
+        allocationInputs.forEach((input) => input.addEventListener("input", update));
+        update();
+    })();
+</script>
+<footer th:replace="~{fragments/shell :: copyright}"></footer>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

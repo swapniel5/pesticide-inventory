@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: ${DEMO_DB_URL:jdbc:postgresql://127.0.0.1:5432/agroshop_demo}
+    driver-class-name: org.postgresql.Driver
+agroshop:
+  demo-data:
+    enabled: true
+    run-on-startup: true
+    reset-only: false

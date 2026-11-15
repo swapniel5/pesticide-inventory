@@ -13,30 +13,12 @@
         </button>
         <div id="mainNavigation" class="collapse navbar-collapse">
             <div class="navbar-nav">
-                <a class="nav-link rounded px-2"
-                   th:classappend="${#strings.equals(#httpServletRequest.requestURI, '/')} ? ' active bg-white bg-opacity-10 fw-semibold' : ''"
-                   th:href="@{/}"
-                   th:attr="aria-current=${#strings.equals(#httpServletRequest.requestURI, '/')} ? 'page' : null">Dashboard</a>
-                <a class="nav-link rounded px-2"
-                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/products')} ? ' active bg-white bg-opacity-10 fw-semibold' : ''"
-                   th:href="@{/products}"
-                   th:attr="aria-current=${#strings.startsWith(#httpServletRequest.requestURI, '/products')} ? 'page' : null">Products</a>
-                <a class="nav-link rounded px-2"
-                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/inventory')} ? ' active bg-white bg-opacity-10 fw-semibold' : ''"
-                   th:href="@{/inventory}"
-                   th:attr="aria-current=${#strings.startsWith(#httpServletRequest.requestURI, '/inventory')} ? 'page' : null">Inventory</a>
-                <a class="nav-link rounded px-2"
-                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/customers')} ? ' active bg-white bg-opacity-10 fw-semibold' : ''"
-                   th:href="@{/customers}"
-                   th:attr="aria-current=${#strings.startsWith(#httpServletRequest.requestURI, '/customers')} ? 'page' : null">Customers</a>
-                <a class="nav-link rounded px-2"
-                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/sales')} ? ' active bg-white bg-opacity-10 fw-semibold' : ''"
-                   th:href="@{/sales}"
-                   th:attr="aria-current=${#strings.startsWith(#httpServletRequest.requestURI, '/sales')} ? 'page' : null">Sales</a>
-                <a class="nav-link rounded px-2"
-                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/payments')} ? ' active bg-white bg-opacity-10 fw-semibold' : ''"
-                   th:href="@{/payments}"
-                   th:attr="aria-current=${#strings.startsWith(#httpServletRequest.requestURI, '/payments')} ? 'page' : null">Payments</a>
+                <a class="nav-link rounded px-2" th:href="@{/}">Dashboard</a>
+                <a class="nav-link rounded px-2" th:href="@{/products}">Products</a>
+                <a class="nav-link rounded px-2" th:href="@{/inventory}">Inventory</a>
+                <a class="nav-link rounded px-2" th:href="@{/customers}">Customers</a>
+                <a class="nav-link rounded px-2" th:href="@{/sales}">Sales</a>
+                <a class="nav-link rounded px-2" th:href="@{/payments}">Payments</a>
             </div>
         </div>
     </div>

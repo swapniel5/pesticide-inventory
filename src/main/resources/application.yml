@@ -17,6 +17,8 @@ spring:
     show-sql: false
   thymeleaf:
     cache: false
+server:
+  port: ${PORT:8080}
 shop:
   name: ${SHOP_NAME:AgroShop}
   address: ${SHOP_ADDRESS:}

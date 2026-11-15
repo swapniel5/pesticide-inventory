@@ -350,6 +350,68 @@ The automated integration tests use H2; they do not establish that the applicati
 ./gradlew clean build
 ```
 
+## Cloud demo deployment (Render + Neon)
+
+The Docker image runs the `prod` Spring profile. In Render, create a Docker web service from this repository and set its health check path to `/api/health`. Render supplies `PORT`; the application binds to it and defaults to port 8080 for local runs.
+
+Set these environment variables in Render's environment settings. Do not commit their values or put secrets in `render.yaml`:
+
+- `DB_URL` — Neon JDBC URL, for example `jdbc:postgresql://<neon-host>/<database>?sslmode=require`
+- `DB_USERNAME` — Neon database role
+- `DB_PASSWORD` — Neon role password
+- `SPRING_SECURITY_USER_NAME` — shop-owner Basic Auth username
+- `SPRING_SECURITY_USER_PASSWORD` — strong shop-owner Basic Auth password
+
+`SPRING_PROFILES_ACTIVE=prod` is set in the Docker image. `PORT` is set by Render. Optional receipt settings are `SHOP_NAME`, `SHOP_ADDRESS`, and `SHOP_PHONE`. Do not set `SERVER_ADDRESS` to `127.0.0.1` on Render.
+
+### Initialize a fresh Neon database
+
+The production profile uses `ddl-auto: validate` and will not create tables. This project has no versioned schema migration tool. For a **new, empty, dedicated Neon database only**, bootstrap the schema once from the existing JPA entities using Hibernate's current `update` mode:
+
+1. Configure the Neon `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and shop-owner variables in a local terminal. Keep the database password out of command history using a hidden prompt.
+2. Run the application locally, bound to localhost, with the one-time schema override:
+
+   ```bash
+   export SPRING_PROFILES_ACTIVE=prod
+   export SERVER_ADDRESS=127.0.0.1
+   export SPRING_JPA_HIBERNATE_DDL_AUTO=update
+   ./gradlew bootRun
+   ```
+
+3. Wait for successful startup, then stop it with Ctrl+C. This should only target the empty Neon database. Never use the override against an existing business database.
+4. Apply the existing stock-movement constraint script using Neon host/database details; `psql` prompts for the database password:
+
+   ```bash
+   psql -h <neon-host> -U <DB_USERNAME> -d <database> -W \
+     -v ON_ERROR_STOP=1 \
+     -f src/main/resources/db/manual/allow-sale-stock-movement.sql
+   ```
+
+5. Remove the schema override and deploy the Docker image normally:
+
+   ```bash
+   unset SPRING_JPA_HIBERNATE_DDL_AUTO
+   ```
+
+The Render deployment then validates the existing schema. Keep a backup before any future schema changes and review them explicitly; Hibernate `update` is only a one-time bootstrap convenience here, not a versioned migration process. Do not activate the `demo` profile on Render.
+
+### Local Docker checks
+
+Build and run the same production image locally after Docker is installed:
+
+```bash
+docker build -t agroshop-demo .
+docker run --rm -p 8080:8080 \
+  -e DB_URL='jdbc:postgresql://<neon-host>/<database>?sslmode=require' \
+  -e DB_USERNAME='<database-role>' \
+  -e DB_PASSWORD \
+  -e SPRING_SECURITY_USER_NAME='<shop-owner>' \
+  -e SPRING_SECURITY_USER_PASSWORD \
+  agroshop-demo
+```
+
+The `-e DB_PASSWORD` and `-e SPRING_SECURITY_USER_PASSWORD` options pass values already exported in the shell without placing the values directly in the command. Open `http://localhost:8080/` and authenticate with the shop-owner credentials.
+
 ## Project layout
 
 ```text
